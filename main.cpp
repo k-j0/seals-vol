@@ -1,7 +1,8 @@
 
 #include <iostream>
-
+#include <memory>
 #include "VolIterator.h"
+#include "filesystem.h"
 
 
 int main(int argc, char** argv) {
@@ -18,17 +19,29 @@ int main(int argc, char** argv) {
 	printf("Opening volume %s at size %llu x %llu x %llu (threshold: %f).\n\n", filename.c_str(), width, height, depth, threshold);
 
 	// Create volume iterator object
-	VolIterator* vol = VolIterator::Open(filename, width, height, depth);
+	std::unique_ptr<VolIterator> vol = std::unique_ptr<VolIterator>(VolIterator::Open(filename, width, height, depth));
 	if (!vol) return 1;
+
+	// Get file name without extension
+	long long int lastSlash = filename.find_last_of('/');
+	long long int lastBlackslash = filename.find_last_of('\\');
+	if (lastSlash > filename.length()) lastSlash = -1;
+	if (lastBlackslash > filename.length()) lastBlackslash = -1;
+	if (lastBlackslash > lastSlash) lastSlash = lastBlackslash;
+	long long int lastPeriod = filename.find_last_of('.');
+	std::string name = filename.substr(lastSlash + 1, lastPeriod - lastSlash - 1);
+	if (!fs::createDirectory("out") || !fs::createDirectory("out/" + name)) {
+		printf("Cannot create output directory out/%s, aborting operation.\n", name.c_str());
+		return 1;
+	}
 
 	// Export some of the slices in the volume
 	for (unsigned long long int z = 0, depth = vol->getDepth(); z < depth; z += 5) {
-		vol->exportSlicePng(z, "out/" + std::to_string(z) + ".png", threshold, threshold);
+		if (!vol->exportSlicePng(z, "out/" + name + "/" + std::to_string(z) + ".png", threshold, threshold)) {
+			return 1;
+		}
 		printf("%llu / %llu\n", z, depth);
 	}
-
-	// Cleanup
-	delete vol;
 
 	return 0;
 }

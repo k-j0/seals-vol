@@ -25,15 +25,20 @@ void VolIterator::loadSlice(unsigned long long int z) {
 	// Load single slice
 	// @todo: allow loading more than one slice at once
 	float* slice = new float[width * height];
+	std::streamoff pos = z * width * height * sizeof(float);
+	#ifdef __MINGW32__
+		// Can't rely on MinGW's seekg on large files since it overflows internally at MAX_INT, proceed manually instead...
+		// @todo
+	#else
+		file.seekg(pos);
+	#endif
 	currentZ = z;
-	file.seekg(z * width * height * sizeof(float));
 	file.read((char*)slice, width * height * sizeof(float));
 	slices.push_back(slice);
 
 }
 
 VolIterator::~VolIterator() {
-
 	clearSlices();
 	file.close();
 }
@@ -49,13 +54,13 @@ void VolIterator::clearSlices() {
 VolIterator* VolIterator::Open(std::string filename, unsigned long long int width, unsigned long long int height, unsigned long long int depth) {
 
 	// Check file path
-	if (!fileExists(filename)) {
+	if (!fs::fileExists(filename)) {
 		printf("File %s cannot be found.\n", filename.c_str());
 		return nullptr;
 	}
 
 	// Check file size
-	unsigned long long int filesize = (unsigned long long int)fileSize(filename);
+	unsigned long long int filesize = fs::fileSize(filename);
 	unsigned long long int expected = width * height * depth * sizeof(float);
 	if (filesize < expected) {
 		printf("File %s was not found to be the advertised size (should be %llu bytes, found %llu bytes).\n", filename.c_str(), expected, filesize);
