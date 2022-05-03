@@ -1,15 +1,18 @@
 
-CFLAGS = -O3 -std=c++17
+CC := g++
+CFLAGS := -O3 -std=c++17
+SOURCES := $(wildcard *.cpp)
+OBJECTS := $(SOURCES:.cpp=.o)
 
-.PHONY: clean
+.PHONY: all clean
 
 all: seals-vol
 
-seals-vol: main.o VolIterator.o
-	g++ $(CFLAGS) $^ -o $@ $(LDFLAGS)
+seals-vol: $(OBJECTS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 %.o: %.cpp
-	g++ $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -f seals-vol
