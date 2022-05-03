@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
 	std::string filename = argv[1];
 	size_t width = std::stoi(argv[2]), height = std::stoi(argv[3]), depth = std::stoi(argv[4]);
 	float threshold = (float)std::atof(argv[5]);
-	printf(BLUE "Opening volume %s at size %llu x %llu x %llu (threshold: %f).\n\n" WHITE, filename.c_str(), width, height, depth, threshold);
+	printf(BLUE "Opening volume %s at size %zu x %zu x %zu (threshold: %f).\n\n" WHITE, filename.c_str(), width, height, depth, threshold);
 
 	// Create volume iterator object
 	std::unique_ptr<VolIterator> vol = std::unique_ptr<VolIterator>(VolIterator::Open(filename, width, height, depth));
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 		if (!vol->exportSlicePng(z, "out/" + name + "/" + std::to_string(z) + ".png", threshold, threshold)) {
 			return 1;
 		}
-		printf("%llu / %llu\n", z, depth);
+		printf("%zu / %zu\n", z, depth);
 	}
 
 	return 0;

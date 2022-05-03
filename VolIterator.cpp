@@ -64,7 +64,7 @@ VolIterator* VolIterator::Open(std::string filename, size_t width, size_t height
 	size_t filesize = fs::fileSize(filename);
 	size_t expected = width * height * depth * sizeof(float);
 	if (filesize < expected) {
-		printf(RED "File %s was not found to be the advertised size (should be %llu bytes, found %llu bytes).\n" WHITE, filename.c_str(), expected, filesize);
+		printf(RED "File %s was not found to be the advertised size (should be %zu bytes, found %zu bytes).\n" WHITE, filename.c_str(), expected, filesize);
 		return nullptr;
 	}
 
@@ -75,7 +75,7 @@ VolIterator* VolIterator::Open(std::string filename, size_t width, size_t height
 bool VolIterator::exportSlicePng(size_t z, std::string filename, float minThreshold, float maxThreshold) {
 
 	if (z >= depth) {
-		printf(RED "Invalid slice %llu on volume of size %llu x %llu x %llu.\n" WHITE, z, width, height, depth);
+		printf(RED "Invalid slice %zu on volume of size %zu x %zu x %zu.\n" WHITE, z, width, height, depth);
 		return false;
 	}
 
@@ -98,7 +98,7 @@ bool VolIterator::exportSlicePng(size_t z, std::string filename, float minThresh
 	delete[] pixels;
 	pixels = nullptr;
 	if (!success) {
-		printf(RED "Error writing to %llu x %llu png file %s.\n" WHITE, width, height, filename.c_str());
+		printf(RED "Error writing to %zu x %zu png file %s.\n" WHITE, width, height, filename.c_str());
 		return false;
 	}
 
