@@ -10,6 +10,11 @@ struct VolIteratorParams {
 	/// Maximum of slices to extract simultaneously before discarding old slices
 	size_t loadedNum = 5;
 
+	/// Downscale factors - if downscaleX == 2, each sampled voxel at coord x will be the result of the average of (x * 2) and (x * 2 + 1)
+	size_t downscaleX = 1;
+	size_t downscaleY = 1;
+	size_t downscaleZ = 1;
+
 };
 
 
@@ -46,9 +51,9 @@ public:
 	static VolIterator* Open(std::string filename, size_t width, size_t height, size_t depth, const VolIteratorParams& params);
 
 	/// Getters
-	inline size_t getWidth() const { return width; }
-	inline size_t getHeight() const { return height; }
-	inline size_t getDepth() const { return depth; }
+	inline size_t getDownscaledWidth()	const { return width / params.downscaleX  + (width % params.downscaleX  ? 1 : 0); }
+	inline size_t getDownscaledHeight() const { return height / params.downscaleY + (height % params.downscaleY ? 1 : 0); }
+	inline size_t getDownscaledDepth()	const { return depth / params.downscaleZ  + (depth % params.downscaleZ  ? 1 : 0); }
 
 	/// Clears the internal buffer of slices
 	void clearSlices();

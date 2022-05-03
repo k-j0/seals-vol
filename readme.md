@@ -14,7 +14,7 @@ This CLI tool is a collection of utilities to work with raw .vol files, meant pr
 ## Features
 
 - Extract image slices from volume
-- TODO: Downscale volume samples
+- Downscale volume samples
 - TODO: Denoise volume
 - TODO: Convert volume voxels to polygon mesh using marching cubes
 

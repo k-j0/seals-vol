@@ -70,6 +70,12 @@ void VolIterator::clearSlices() {
 
 VolIterator* VolIterator::Open(std::string filename, size_t width, size_t height, size_t depth, const VolIteratorParams& params) {
 
+	// Check params
+	if (params.loadedNum < params.downscaleZ) {
+		printf(RED "params.loadedNum (%zu) should be greater than params.downscaleZ (%zu)!\n" WHITE, params.loadedNum, params.downscaleZ);
+		return nullptr;
+	}
+
 	// Check file path
 	if (!fs::fileExists(filename)) {
 		printf(RED "File %s cannot be found.\n" WHITE, filename.c_str());
@@ -90,39 +96,55 @@ VolIterator* VolIterator::Open(std::string filename, size_t width, size_t height
 
 float VolIterator::getVoxel(size_t x, size_t y, size_t z) {
 
-	if (!loadSlice(z)) {
-		return NAN;
+	// Sample downscaleX x downscaleY x downscaleZ pixels to return an average
+	float total = 0.0f;
+	size_t count = 0;
+	for (size_t fullZ = z * params.downscaleZ; fullZ < (z + 1) * params.downscaleZ && fullZ < depth; ++fullZ) {
+
+		// Ensure all slices corresponding to downscaled coord z are loaded in
+		if (!loadSlice(fullZ)) return NAN;
+
+		for (size_t fullY = y * params.downscaleY; fullY < (y + 1) * params.downscaleY && fullY < height; ++fullY) {
+			for (size_t fullX = x * params.downscaleX; fullX < (x + 1) * params.downscaleX && fullX < width; ++fullX) {
+				total += slices[fullZ - currentZ][fullY * width + fullX];
+				++count;
+			}
+		}
 	}
 
-	return slices[z - currentZ][y * width + x];
+	// Average the sampled values
+	return total / count;
 }
 
 bool VolIterator::exportSlicePng(size_t z, std::string filename, float minThreshold, float maxThreshold) {
 
-	if (z >= depth) {
-		printf(RED "Invalid slice %zu on volume of size %zu x %zu x %zu.\n" WHITE, z, width, height, depth);
+	if (z >= getDownscaledDepth()) {
+		printf(RED "Invalid slice %zu on volume of size %zu x %zu x %zu.\n" WHITE, z, getDownscaledWidth(), getDownscaledHeight(), getDownscaledDepth());
+		return false;
+	}
+
+	if (!loadSlice(z)) {
 		return false;
 	}
 
 	// Convert slice to 8-bit greyscale image
-	unsigned char* pixels = new unsigned char[width * height];
-	for (size_t y = 0; y < height; ++y) {
-		for (size_t x = 0; x < width; ++x) {
+	size_t dWidth = getDownscaledWidth();
+	size_t dHeight = getDownscaledHeight();
+	unsigned char* pixels = new unsigned char[dWidth * dHeight];
+	for (size_t y = 0; y < dHeight; ++y) {
+		for (size_t x = 0; x < dWidth; ++x) {
 			float val = getVoxel(x, y, z);
-			if (std::isnan(val)) {
-				return false; // could not fetch voxel
-			}
 			val = (val - minThreshold) / (maxThreshold - minThreshold); // 0..1 remap
-			pixels[y * width + x] = val < 0.0f ? 0 : val > 1.0f ? 255 : int(val * 255); // clamp & write
+			pixels[y * dWidth + x] = val < 0.0f ? 0 : val > 1.0f ? 255 : int(val * 255); // clamp & write
 		}
 	}
 
 	// Write out png file
-	bool success = stbi_write_png(filename.c_str(), (int)width, (int)height, 1 /* greyscale */, pixels, 0);
+	bool success = stbi_write_png(filename.c_str(), (int)dWidth, (int)dHeight, 1 /* greyscale */, pixels, 0);
 	delete[] pixels;
 	pixels = nullptr;
 	if (!success) {
-		printf(RED "Error writing to %zu x %zu png file %s.\n" WHITE, width, height, filename.c_str());
+		printf(RED "Error writing to %zu x %zu png file %s.\n" WHITE, dWidth, dHeight, filename.c_str());
 		return false;
 	}
 

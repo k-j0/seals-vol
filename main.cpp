@@ -13,6 +13,10 @@ int main(int argc, char** argv) {
 	std::string filename;
 	size_t width, height, depth;
 	VolIteratorParams params;
+	params.downscaleX = 2;
+	params.downscaleY = 2;
+	params.downscaleZ = 2;
+	params.loadedNum = params.downscaleZ * 2;
 
 	// Read command-line arguments
 	if (argc < 5) {
@@ -44,7 +48,7 @@ int main(int argc, char** argv) {
 	}
 
 	// Export some of the slices in the volume
-	for (size_t z = 0, depth = vol->getDepth(); z < depth; z += 100) {
+	for (size_t z = 0, depth = vol->getDownscaledDepth(); z < depth; z += 10) {
 		if (!vol->exportSlicePng(z, "out/" + name + "/" + std::to_string(z) + ".png", threshold, threshold)) {
 			return 1;
 		}
