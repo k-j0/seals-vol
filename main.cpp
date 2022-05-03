@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 	std::string filename = argv[1];
-	unsigned long long int width = std::stoi(argv[2]), height = std::stoi(argv[3]), depth = std::stoi(argv[4]);
+	size_t width = std::stoi(argv[2]), height = std::stoi(argv[3]), depth = std::stoi(argv[4]);
 	float threshold = (float)std::atof(argv[5]);
 	printf(BLUE "Opening volume %s at size %llu x %llu x %llu (threshold: %f).\n\n" WHITE, filename.c_str(), width, height, depth, threshold);
 
@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
 	}
 
 	// Export some of the slices in the volume
-	for (unsigned long long int z = 0, depth = vol->getDepth(); z < depth; z += 100) {
+	for (size_t z = 0, depth = vol->getDepth(); z < depth; z += 100) {
 		if (!vol->exportSlicePng(z, "out/" + name + "/" + std::to_string(z) + ".png", threshold, threshold)) {
 			return 1;
 		}

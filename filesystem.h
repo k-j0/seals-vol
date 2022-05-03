@@ -23,7 +23,7 @@ namespace fs {
 	}
 
 	/// Returns the file size in bytes of the given file
-	inline unsigned long long int fileSize(std::string filename) {
+	inline size_t fileSize(std::string filename) {
 	#ifdef __MINGW32__
 		std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
 		return in.tellg();
