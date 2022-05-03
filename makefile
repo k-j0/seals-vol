@@ -1,19 +1,21 @@
 
+OUT := seals-vol
 CC := g++
 CFLAGS := -O3 -std=c++17
+
 SOURCES := $(wildcard *.cpp)
 OBJECTS := $(SOURCES:.cpp=.o)
 
 .PHONY: all clean
 
-all: seals-vol
+all: $(OUT)
 
-seals-vol: $(OBJECTS)
+$(OUT): $(OBJECTS)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f seals-vol
+	rm -f $(OUT)
 	rm -f *.o
