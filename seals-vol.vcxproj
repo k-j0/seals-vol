@@ -147,6 +147,7 @@
     <ClCompile Include="VolIterator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="colours.h" />
     <ClInclude Include="filesystem.h" />
     <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="VolIterator.h" />

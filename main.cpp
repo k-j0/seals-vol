@@ -3,6 +3,7 @@
 #include <memory>
 #include "VolIterator.h"
 #include "filesystem.h"
+#include "colours.h"
 
 
 int main(int argc, char** argv) {
@@ -10,13 +11,13 @@ int main(int argc, char** argv) {
 
 	// Read command-line arguments
 	if (argc < 5) {
-		printf("Usage: ./seals-vol <filename> <width> <height> <depth> <threshold>\n");
+		printf(YELLOW "Usage: ./seals-vol <filename> <width> <height> <depth> <threshold>\n" WHITE);
 		return 0;
 	}
 	std::string filename = argv[1];
 	unsigned long long int width = std::stoi(argv[2]), height = std::stoi(argv[3]), depth = std::stoi(argv[4]);
 	float threshold = (float)std::atof(argv[5]);
-	printf("Opening volume %s at size %llu x %llu x %llu (threshold: %f).\n\n", filename.c_str(), width, height, depth, threshold);
+	printf(BLUE "Opening volume %s at size %llu x %llu x %llu (threshold: %f).\n\n" WHITE, filename.c_str(), width, height, depth, threshold);
 
 	// Create volume iterator object
 	std::unique_ptr<VolIterator> vol = std::unique_ptr<VolIterator>(VolIterator::Open(filename, width, height, depth));
@@ -31,7 +32,7 @@ int main(int argc, char** argv) {
 	long long int lastPeriod = filename.find_last_of('.');
 	std::string name = filename.substr(lastSlash + 1, lastPeriod - lastSlash - 1);
 	if (!fs::createDirectory("out") || !fs::createDirectory("out/" + name)) {
-		printf("Cannot create output directory out/%s, aborting operation.\n", name.c_str());
+		printf(RED "Cannot create output directory out/%s, aborting operation.\n" WHITE, name.c_str());
 		return 1;
 	}
 

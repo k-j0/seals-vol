@@ -8,6 +8,7 @@
 #include "stb_image_write.h"
 
 #include "filesystem.h"
+#include "colours.h"
 
 
 VolIterator::VolIterator(std::string filename, unsigned long long int width, unsigned long long int height, unsigned long long int depth) : width(width), height(height), depth(depth) {
@@ -28,7 +29,7 @@ bool VolIterator::loadSlice(unsigned long long int z) {
 	std::streamoff pos = z * width * height * sizeof(float);
 	file.seekg(pos);
 	if (file.tellg() == -1) {
-		printf("Error reading volume file; it might be too large to read currently, make sure to use a 64-bit architecture if possible.\n");
+		printf(RED "Error reading volume file; it might be too large to read currently, make sure to use a 64-bit architecture if possible.\n" WHITE);
 		return false;
 	}
 	currentZ = z;
@@ -55,7 +56,7 @@ VolIterator* VolIterator::Open(std::string filename, unsigned long long int widt
 
 	// Check file path
 	if (!fs::fileExists(filename)) {
-		printf("File %s cannot be found.\n", filename.c_str());
+		printf(RED "File %s cannot be found.\n" WHITE, filename.c_str());
 		return nullptr;
 	}
 
@@ -63,7 +64,7 @@ VolIterator* VolIterator::Open(std::string filename, unsigned long long int widt
 	unsigned long long int filesize = fs::fileSize(filename);
 	unsigned long long int expected = width * height * depth * sizeof(float);
 	if (filesize < expected) {
-		printf("File %s was not found to be the advertised size (should be %llu bytes, found %llu bytes).\n", filename.c_str(), expected, filesize);
+		printf(RED "File %s was not found to be the advertised size (should be %llu bytes, found %llu bytes).\n" WHITE, filename.c_str(), expected, filesize);
 		return nullptr;
 	}
 
@@ -74,7 +75,7 @@ VolIterator* VolIterator::Open(std::string filename, unsigned long long int widt
 bool VolIterator::exportSlicePng(unsigned long long int z, std::string filename, float minThreshold, float maxThreshold) {
 
 	if (z >= depth) {
-		printf("Invalid slice %llu on volume of size %llu x %llu x %llu.\n", z, width, height, depth);
+		printf(RED "Invalid slice %llu on volume of size %llu x %llu x %llu.\n" WHITE, z, width, height, depth);
 		return false;
 	}
 
@@ -97,7 +98,7 @@ bool VolIterator::exportSlicePng(unsigned long long int z, std::string filename,
 	delete[] pixels;
 	pixels = nullptr;
 	if (!success) {
-		printf("Error writing to %llu x %llu png file %s.\n", width, height, filename.c_str());
+		printf(RED "Error writing to %llu x %llu png file %s.\n" WHITE, width, height, filename.c_str());
 		return false;
 	}
 
