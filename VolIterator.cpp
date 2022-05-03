@@ -26,14 +26,14 @@ bool VolIterator::loadSlice(size_t z) {
 	// Load single slice
 	// @todo: allow loading more than one slice at once
 	float* slice = new float[width * height];
-	std::streamoff pos = z * width * height * sizeof(float);
+	std::streamoff pos = (std::streamoff)z * width * height * sizeof(float);
 	file.seekg(pos);
 	if (file.tellg() == -1) {
 		printf(RED "Error reading volume file; it might be too large to read currently, make sure to use a 64-bit architecture if possible.\n" WHITE);
 		return false;
 	}
 	currentZ = z;
-	file.read((char*)slice, width * height * sizeof(float));
+	file.read((char*)slice, (std::streamsize)width * height * sizeof(float));
 	slices.push_back(slice);
 
 	return true;
