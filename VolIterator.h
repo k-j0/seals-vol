@@ -24,7 +24,7 @@ protected:
 	VolIterator(std::string filename, unsigned long long int width, unsigned long long int height, unsigned long long int depth);
 
 	/// Loads the given slice from the original file (padded with neighbours as needed)
-	void loadSlice(unsigned long long int z);
+	bool loadSlice(unsigned long long int z);
 
 public:
 	virtual ~VolIterator();

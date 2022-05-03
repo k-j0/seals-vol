@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 	}
 
 	// Export some of the slices in the volume
-	for (unsigned long long int z = 0, depth = vol->getDepth(); z < depth; z += 5) {
+	for (unsigned long long int z = 0, depth = vol->getDepth(); z < depth; z += 100) {
 		if (!vol->exportSlicePng(z, "out/" + name + "/" + std::to_string(z) + ".png", threshold, threshold)) {
 			return 1;
 		}

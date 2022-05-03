@@ -20,10 +20,12 @@ This CLI tool is a collection of utilities to work with raw .vol files, meant pr
 
 ## Build
 
-On Windows, the project can be opened and compiled with Visual Studio directly. On all other platforms, use
+On Windows, the project can be opened and compiled with Visual Studio directly. On other platforms, use
 ```sh
 $ make
 ```
+
+In order to be able to open large volume files, it's recommended to use a 64-bit arch.
 
 ## Usage
 

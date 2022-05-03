@@ -15,7 +15,7 @@ VolIterator::VolIterator(std::string filename, unsigned long long int width, uns
 	file.open(filename, std::ios::binary);
 }
 
-void VolIterator::loadSlice(unsigned long long int z) {
+bool VolIterator::loadSlice(unsigned long long int z) {
 	assert(z < depth);
 
 	// For now, throw out all slices currently loaded
@@ -26,16 +26,16 @@ void VolIterator::loadSlice(unsigned long long int z) {
 	// @todo: allow loading more than one slice at once
 	float* slice = new float[width * height];
 	std::streamoff pos = z * width * height * sizeof(float);
-	#ifdef __MINGW32__
-		// Can't rely on MinGW's seekg on large files since it overflows internally at MAX_INT, proceed manually instead...
-		// @todo
-	#else
-		file.seekg(pos);
-	#endif
+	file.seekg(pos);
+	if (file.tellg() == -1) {
+		printf("Error reading volume file; it might be too large to read currently, make sure to use a 64-bit architecture if possible.\n");
+		return false;
+	}
 	currentZ = z;
 	file.read((char*)slice, width * height * sizeof(float));
 	slices.push_back(slice);
 
+	return true;
 }
 
 VolIterator::~VolIterator() {
@@ -78,7 +78,9 @@ bool VolIterator::exportSlicePng(unsigned long long int z, std::string filename,
 		return false;
 	}
 
-	loadSlice(z);
+	if (!loadSlice(z)) {
+		return false;
+	}
 
 	// Convert slice to 8-bit greyscale image
 	unsigned char* pixels = new unsigned char[width * height];
