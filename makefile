@@ -11,7 +11,7 @@ OBJECTS := $(SOURCES:.cpp=.o)
 all: $(OUT)
 
 $(OUT): $(OBJECTS)
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
