@@ -71,6 +71,8 @@ void ObjModel::addAASquare(float x, float y, float z, ObjModel::Direction direct
 	//	  A ._____\. C
 	//
 	size_t idx = vertices.size() / 6;
+	// @todo: instead of writing the normals to the vertices array, both positions and normals should ideally only be added if they don't already exist (i.e. 2 index buffers)
+	//		  this will allow for better use of the wavefront format, and will be especially useful for cubified voxel data where there's only 6 normals in the entire model, and a lot of vertices are likely to share positions
 	PUSH_VERT(x - hsize * tx - hsize * bx, y - hsize * ty - hsize * by, z - hsize * tz - hsize * bz, nx, ny, nz);
 	PUSH_VERT(x + hsize * tx - hsize * bx, y + hsize * ty - hsize * by, z + hsize * tz - hsize * bz, nx, ny, nz);
 	PUSH_VERT(x - hsize * tx + hsize * bx, y - hsize * ty + hsize * by, z - hsize * tz + hsize * bz, nx, ny, nz);
