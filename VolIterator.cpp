@@ -9,6 +9,7 @@
 
 #include "filesystem.h"
 #include "colours.h"
+#include "ObjModel.h"
 
 
 VolIterator::VolIterator(std::string filename, size_t width, size_t height, size_t depth, const VolIteratorParams& params) : width(width), height(height), depth(depth), params(params) {
@@ -100,9 +101,13 @@ float VolIterator::getVoxel(size_t x, size_t y, size_t z) {
 	float total = 0.0f;
 	size_t count = 0;
 	for (size_t fullZ = z * params.downscaleZ; fullZ < (z + 1) * params.downscaleZ && fullZ < depth; ++fullZ) {
-
-		// Ensure all slices corresponding to downscaled coord z are loaded in
-		if (!loadSlice(fullZ)) return NAN;
+		
+		if (fullZ < currentZ || fullZ >= currentZ + slices.size()) {
+			printf("Z is out of range when fetching voxels: %zu: full = %zu, current = %zu, slices.length = %zu, depth = %zu...\n", z, fullZ, currentZ, slices.size(), depth);
+			assert(false);
+			return 0;
+		}
+		assert(fullZ >= currentZ && fullZ < currentZ + slices.size());
 
 		for (size_t fullY = y * params.downscaleY; fullY < (y + 1) * params.downscaleY && fullY < height; ++fullY) {
 			for (size_t fullX = x * params.downscaleX; fullX < (x + 1) * params.downscaleX && fullX < width; ++fullX) {
@@ -124,6 +129,7 @@ bool VolIterator::exportSlicePng(size_t z, std::string filename, float minThresh
 	}
 
 	if (!loadSlice(z)) {
+		printf(RED "Cannot load slice %zu out of %zu, aborting.\n" WHITE, z, getDownscaledDepth());
 		return false;
 	}
 
@@ -145,6 +151,81 @@ bool VolIterator::exportSlicePng(size_t z, std::string filename, float minThresh
 	pixels = nullptr;
 	if (!success) {
 		printf(RED "Error writing to %zu x %zu png file %s.\n" WHITE, dWidth, dHeight, filename.c_str());
+		return false;
+	}
+
+	return true;
+}
+
+bool VolIterator::exportObj(std::string filename, float threshold, float scale) {
+
+	ObjModel model;
+
+	size_t dDepth = getDownscaledDepth();
+	size_t dWidth = getDownscaledWidth();
+	size_t dHeight = getDownscaledHeight();
+
+	if (params.loadedNum < 3 * params.downscaleZ) {
+		printf(RED "params.loadedNum needs to be at least %zu for simple obj export to function!\n" WHITE, 3 * params.downscaleZ);
+		return false;
+	}
+
+	// load first slice(s)
+	for (size_t fullZ = 0; fullZ < params.downscaleZ && fullZ < depth; ++fullZ) {
+		if (!loadSlice(fullZ)) {
+			printf(RED "Cannot load slice %zu out of %zu, aborting.\n" WHITE, fullZ, depth);
+			return false;
+		}
+	}
+
+	// Iterate over voxels, slice by slice
+	for (size_t z = 0; z < dDepth; ++z) {
+
+		// Ensure the next slice(s) is/are loaded in - the current and previous slices should already be available.
+		if (z < dDepth - 1) {
+			for (size_t fullZ = (z + 1) * params.downscaleZ; fullZ < (z + 2) * params.downscaleZ && fullZ < depth; ++fullZ) {
+				if (!loadSlice(fullZ)) {
+					printf(RED "Cannot load slice %zu (at step %zu) out of %zu (full = %zu, depth = %zu), aborting.\n", WHITE, z + 1, z, getDownscaledDepth(), fullZ, depth);
+					return false;
+				}
+			}
+		}
+		
+		for (size_t y = 0; y < dHeight; ++y) {
+			for (size_t x = 0; x < dWidth; ++x) {
+
+				bool vox = getVoxel(x, y, z) >= threshold;
+				if (!vox) continue;
+
+				// 6 sides
+				if (x == dWidth - 1 || getVoxel(x + 1, y, z) < threshold) {
+					model.addAASquare((x + 0.5f) * scale, y * scale, z * scale, ObjModel::Direction::POS_X, 0.5f * scale);
+				}
+				if (x == 0 || getVoxel(x - 1, y, z) < threshold) {
+					model.addAASquare((x - 0.5f) * scale, y * scale, z * scale, ObjModel::Direction::NEG_X, 0.5f * scale);
+				}
+				if (y == dHeight - 1 || getVoxel(x, y + 1, z) < threshold) {
+					model.addAASquare(x * scale, (y + 0.5f) * scale, z * scale, ObjModel::Direction::POS_Y, 0.5f * scale);
+				}
+				if (y == 0 || getVoxel(x, y - 1, z) < threshold) {
+					model.addAASquare(x * scale, (y - 0.5f) * scale, z * scale, ObjModel::Direction::NEG_Y, 0.5f * scale);
+				}
+				if (z == dDepth - 1 || getVoxel(x, y, z + 1) < threshold) {
+					model.addAASquare(x * scale, y * scale, (z + 0.5f) * scale, ObjModel::Direction::POS_Z, 0.5f * scale);
+				}
+				if (z == 0 || getVoxel(x, y, z - 1) < threshold) {
+					model.addAASquare(x * scale, y * scale, (z - 0.5f) * scale, ObjModel::Direction::NEG_Z, 0.5f * scale);
+				}
+
+			}
+		}
+
+		printf("%zu of %zu\n", z + 1, dDepth);
+	}
+
+	// Write out to wavefront file
+	if (!model.writeToFile(filename)) {
+		printf(RED "Cannot write obj model to file %s, aborting.\n" WHITE, filename.c_str());
 		return false;
 	}
 

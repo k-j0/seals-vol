@@ -63,4 +63,7 @@ public:
 
 	/// Exports a png image of a slice
 	bool exportSlicePng(size_t z, std::string filename, float minThreshold, float maxThreshold);
+
+	/// Converts the entire volume to cubified polygon mesh
+	bool exportObj(std::string filename, float threshold, float scale);
 };

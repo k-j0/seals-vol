@@ -13,10 +13,10 @@ int main(int argc, char** argv) {
 	std::string filename;
 	size_t width, height, depth;
 	VolIteratorParams params;
-	params.downscaleX = 2;
-	params.downscaleY = 2;
-	params.downscaleZ = 2;
-	params.loadedNum = params.downscaleZ * 2;
+	params.downscaleX = 10;
+	params.downscaleY = 10;
+	params.downscaleZ = 10;
+	params.loadedNum = params.downscaleZ * 3;
 
 	// Read command-line arguments
 	if (argc < 5) {
@@ -48,11 +48,16 @@ int main(int argc, char** argv) {
 	}
 
 	// Export some of the slices in the volume
-	for (size_t z = 0, depth = vol->getDownscaledDepth(); z < depth; z += 10) {
+	/*for (size_t z = 0, depth = vol->getDownscaledDepth(); z < depth; z += 10) {
 		if (!vol->exportSlicePng(z, "out/" + name + "/" + std::to_string(z) + ".png", threshold, threshold)) {
 			return 1;
 		}
 		printf("%zu / %zu\n", z, depth);
+	}*/
+
+	// Export entire volume as polygon mesh (simple cubes)
+	if (!vol->exportObj("out/" + name + ".obj", threshold, 0.01f)) {
+		return 1;
 	}
 
 	return 0;

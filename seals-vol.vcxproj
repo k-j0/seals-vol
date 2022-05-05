@@ -146,11 +146,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ObjModel.cpp" />
     <ClCompile Include="VolIterator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="colours.h" />
     <ClInclude Include="filesystem.h" />
+    <ClInclude Include="ObjModel.h" />
     <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="VolIterator.h" />
   </ItemGroup>
