@@ -13,7 +13,6 @@ This CLI tool is a collection of utilities to work with raw .vol files, meant pr
 
 ## Features
 
-- TODO: Read fragmented .vol files
 - Extract image slices from volume
 - Downscale volume samples
 - Convert volume voxels to cubified polygon mesh

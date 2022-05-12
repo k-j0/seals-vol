@@ -198,7 +198,6 @@ bool VolIterator::exportObj(std::string filename, float threshold, float scale) 
 				if (!vox) continue;
 
 				// 6 sides
-				// @todo: offset polygons by -0.5 the total size of the model to centre it
 				if (x == dWidth - 1 || getVoxel(x + 1, y, z) < threshold) {
 					model.addAASquare((x + 0.5f) * scale, y * scale, z * scale, ObjModel::Direction::POS_X, 0.5f * scale);
 				}
