@@ -13,9 +13,10 @@ This CLI tool is a collection of utilities to work with raw .vol files, meant pr
 
 ## Features
 
+- TODO: Read fragmented .vol files
 - Extract image slices from volume
 - Downscale volume samples
-- TODO: Convert volume voxels to cubified polygon mesh
+- Convert volume voxels to cubified polygon mesh
 - TODO: Denoise volume
 - TODO: Convert volume voxels to polygon mesh using marching cubes
 

@@ -5,23 +5,42 @@
 #include <cassert>
 
 
-#define PUSH_VERT(x, y, z, nx, ny, nz) \
-	do { \
-		vertices.push_back(x); \
-		vertices.push_back(y); \
-		vertices.push_back(z); \
-		vertices.push_back(nx); \
-		vertices.push_back(ny); \
-		vertices.push_back(nz); \
-	} while (false)
+size_t ObjModel::addPosition(float x, float y, float z) {
+	float3 key = { x, y, z };
+	auto found = knownPositions.find(key);
+	if (found != knownPositions.end()) {
+		return found->second;
+	}
+	const size_t idx = positions.size() / 3;
+	positions.push_back(x);
+	positions.push_back(y);
+	positions.push_back(z);
+	knownPositions.insert(std::make_pair(key, idx));
+	return idx;
+}
 
-#define PUSH_TRI(a, b, c) \
-	do { \
-		indices.push_back(a); \
-		indices.push_back(b); \
-		indices.push_back(c); \
-	} while (false)
+size_t ObjModel::addNormal(float x, float y, float z) {
+	float3 key = { x, y, z };
+	auto found = knownNormals.find(key);
+	if (found != knownNormals.end()) {
+		return found->second;
+	}
+	size_t idx = normals.size() / 3;
+	normals.push_back(x);
+	normals.push_back(y);
+	normals.push_back(z);
+	knownNormals.insert(std::make_pair(key, idx));
+	return idx;
+}
 
+void ObjModel::addTri(size_t a, size_t b, size_t c, size_t na, size_t nb, size_t nc) {
+	positionIndices.push_back(a);
+	positionIndices.push_back(b);
+	positionIndices.push_back(c);
+	normalIndices.push_back(na);
+	normalIndices.push_back(nb);
+	normalIndices.push_back(nc);
+}
 
 void ObjModel::addAASquare(float x, float y, float z, ObjModel::Direction direction, float hsize) {
 	
@@ -70,16 +89,14 @@ void ObjModel::addAASquare(float x, float y, float z, ObjModel::Direction direct
 	//		|	\  |
 	//	  A ._____\. C
 	//
-	size_t idx = vertices.size() / 6;
-	// @todo: instead of writing the normals to the vertices array, both positions and normals should ideally only be added if they don't already exist (i.e. 2 index buffers)
-	//		  this will allow for better use of the wavefront format, and will be especially useful for cubified voxel data where there's only 6 normals in the entire model, and a lot of vertices are likely to share positions
-	PUSH_VERT(x - hsize * tx - hsize * bx, y - hsize * ty - hsize * by, z - hsize * tz - hsize * bz, nx, ny, nz);
-	PUSH_VERT(x + hsize * tx - hsize * bx, y + hsize * ty - hsize * by, z + hsize * tz - hsize * bz, nx, ny, nz);
-	PUSH_VERT(x - hsize * tx + hsize * bx, y - hsize * ty + hsize * by, z - hsize * tz + hsize * bz, nx, ny, nz);
-	PUSH_VERT(x + hsize * tx + hsize * bx, y + hsize * ty + hsize * by, z + hsize * tz + hsize * bz, nx, ny, nz);
+	size_t a = addPosition(x - hsize * tx - hsize * bx, y - hsize * ty - hsize * by, z - hsize * tz - hsize * bz);
+	size_t b = addPosition(x + hsize * tx - hsize * bx, y + hsize * ty - hsize * by, z + hsize * tz - hsize * bz);
+	size_t c = addPosition(x - hsize * tx + hsize * bx, y - hsize * ty + hsize * by, z - hsize * tz + hsize * bz);
+	size_t d = addPosition(x + hsize * tx + hsize * bx, y + hsize * ty + hsize * by, z + hsize * tz + hsize * bz);
+	size_t n = addNormal(nx, ny, nz);
 
-	PUSH_TRI(idx, idx + 1, idx + 2);
-	PUSH_TRI(idx + 2, idx + 1, idx + 3);
+	addTri(a, b, c, n, n, n);
+	addTri(c, b, d, n, n, n);
 
 }
 
@@ -88,18 +105,21 @@ bool ObjModel::writeToFile(std::string filename) {
 	std::ofstream file(filename);
 
 	// Write positions
-	for (size_t i = 0, s = vertices.size(); i < s; i += 6) {
-		file << "v " << vertices[i] << ' ' << vertices[i + 1] << ' ' << vertices[i + 2] << "\r\n";
+	for (size_t i = 0, s = positions.size(); i < s; i += 3) {
+		file << "v " << positions[i] << ' ' << positions[i + 1] << ' ' << positions[i + 2] << "\n";
 	}
 
 	// Write normals
-	for (size_t i = 0, s = vertices.size(); i < s; i += 6) {
-		file << "vn " << vertices[i + 3] << ' ' << vertices[i + 4] << ' ' << vertices[i + 5] << "\r\n";
+	for (size_t i = 0, s = normals.size(); i < s; i += 3) {
+		file << "vn " << normals[i] << ' ' << normals[i + 1] << ' ' << normals[i + 2] << "\n";
 	}
 
 	// Write faces
-	for (size_t i = 0, s = indices.size(); i < s; i += 3) {
-		file << "f " << indices[i]+1 << "//" << indices[i]+1 << ' ' << indices[i + 1]+1 << "//" << indices[i + 1]+1 << ' ' << indices[i + 2]+1 << "//" << indices[i + 2]+1 << "\r\n";
+	assert(positionIndices.size() == normalIndices.size());
+	for (size_t i = 0, s = positionIndices.size(); i < s; i += 3) {
+		file << "f " << positionIndices[i]+1 << "//" << normalIndices[i]+1 << ' '
+					 << positionIndices[i + 1]+1 << "//" << normalIndices[i + 1]+1 << ' '
+					 << positionIndices[i + 2]+1 << "//" << normalIndices[i + 2]+1 << "\n";
 	}
 
 	file.close();
