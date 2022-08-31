@@ -1,7 +1,7 @@
 
 OUT := seals-vol
 CC := g++
-CFLAGS := -O3 -std=c++17
+CFLAGS := -O3 -std=c++17 -Wall
 
 SOURCES := $(wildcard *.cpp)
 OBJECTS := $(SOURCES:.cpp=.o)

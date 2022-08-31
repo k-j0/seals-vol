@@ -14,7 +14,22 @@
 
 VolIterator::VolIterator(std::string filename, size_t width, size_t height, size_t depth, const VolIteratorParams& params) : width(width), height(height), depth(depth), params(params) {
 	
-	file.open(filename, std::ios::binary);
+	if (fs::isDirectory(filename)) {
+		std::vector<std::string> filenames;
+		fs::listDirectoryFiles(filename, filenames);
+		for (int i = 0, sz = filenames.size(); i < sz; ++i) {
+			if (i == 0) {
+				commonFileSize = fs::fileSize(filenames[i]);
+			} else if (i < sz - 1 && fs::fileSize(filenames[i]) != commonFileSize) {
+				printf(RED "Cannot load volume parts that do not share the exact same file size (part %d is %lu, expecting %lu)\n" WHITE, i, fs::fileSize(filenames[i]), commonFileSize);
+				exit(1);
+			}
+			files.emplace_back(filenames[i], std::ios::binary);
+		}
+	} else {
+		commonFileSize = fs::fileSize(filename);
+		files.emplace_back(filename, std::ios::binary);
+	}
 }
 
 bool VolIterator::loadSlice(size_t z) {
@@ -36,13 +51,23 @@ bool VolIterator::loadSlice(size_t z) {
 	// Fetch the slices required to fill the gap between currentZ and z
 	while (z >= currentZ + slices.size()) {
 		float* slice = new float[width * height];
-		std::streamoff pos = (std::streamoff)(currentZ + slices.size()) * width * height * sizeof(float);
-		file.seekg(pos);
-		if (file.tellg() == -1) {
-			printf(RED "Error reading volume file; it might be too large to read currently, make sure to use a 64-bit architecture if possible.\n" WHITE);
-			return false;
+		std::size_t remaining = width * height * sizeof(float); // number of bytes to read
+		std::streamoff pos = (std::streamoff)(currentZ + slices.size()) * width * height * sizeof(float); // global offset
+		std::size_t writeOffset = 0; // offset into the slice being written out
+		while (remaining > 0) {
+			std::size_t fileIdx = pos % commonFileSize; // grab the file that contains the beginning of the range of bytes to read
+			std::streamoff localPos = pos - fileIdx * commonFileSize; // position of the range start inside the file
+			files[fileIdx].seekg(localPos);
+			if (files[fileIdx].tellg() == -1) {
+				printf(RED "Error reading volume file; it might be too large to read currently, make sure to use a 64-bit architecture if possible.\n" WHITE);
+				return false;
+			}
+			std::size_t readSize = localPos + remaining >= commonFileSize ? commonFileSize - localPos : remaining; // amount of bytes to read from this file specifically
+			files[fileIdx].read(&((char*)slice)[writeOffset], (std::streamsize)readSize);
+			remaining -= readSize;
+			writeOffset += readSize;
+			pos += readSize;
 		}
-		file.read((char*)slice, (std::streamsize)width * height * sizeof(float));
 		slices.push_back(slice);
 	}
 
@@ -58,7 +83,9 @@ bool VolIterator::loadSlice(size_t z) {
 
 VolIterator::~VolIterator() {
 	clearSlices();
-	file.close();
+	for (auto& file : files) {
+		file.close();
+	}
 }
 
 void VolIterator::clearSlices() {
@@ -84,11 +111,15 @@ VolIterator* VolIterator::Open(std::string filename, size_t width, size_t height
 	}
 
 	// Check file size
-	size_t filesize = fs::fileSize(filename);
-	size_t expected = width * height * depth * sizeof(float);
-	if (filesize < expected) {
-		printf(RED "File %s was not found to be the advertised size (should be %zu bytes, found %zu bytes).\n" WHITE, filename.c_str(), expected, filesize);
-		return nullptr;
+	if (fs::isDirectory(filename)) {
+		printf(YELLOW "Warning: the given filename is a directory, assuming volume part files without size check.\n" WHITE);
+	} else {
+		size_t filesize = fs::fileSize(filename);
+		size_t expected = width * height * depth * sizeof(float);
+		if (filesize < expected) {
+			printf(RED "File %s was not found to be the advertised size (should be %zu bytes, found %zu bytes).\n" WHITE, filename.c_str(), expected, filesize);
+			return nullptr;
+		}
 	}
 
 	// Create iterator
@@ -103,9 +134,8 @@ float VolIterator::getVoxel(size_t x, size_t y, size_t z) {
 	for (size_t fullZ = z * params.downscaleZ; fullZ < (z + 1) * params.downscaleZ && fullZ < depth; ++fullZ) {
 		
 		if (fullZ < currentZ || fullZ >= currentZ + slices.size()) {
-			printf("Z is out of range when fetching voxels: %zu: full = %zu, current = %zu, slices.length = %zu, depth = %zu...\n", z, fullZ, currentZ, slices.size(), depth);
-			assert(false);
-			return 0;
+			printf(RED "Z is out of range when fetching voxels: %zu: full = %zu, current = %zu, slices.length = %zu, depth = %zu...\n" WHITE, z, fullZ, currentZ, slices.size(), depth);
+			exit(1);
 		}
 		assert(fullZ >= currentZ && fullZ < currentZ + slices.size());
 

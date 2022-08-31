@@ -26,8 +26,9 @@ class VolIterator {
 	/// Parameters to drive the file reading
 	VolIteratorParams params;
 
-	/// File we're reading from
-	std::ifstream file;
+	/// File(s) we're reading from
+	std::vector<std::ifstream> files;
+	size_t commonFileSize;
 
 	/// Array of slices of the file currently loaded in; each slice is width x height floats
 	/// Maximum length at any one time is params.loadedNum
