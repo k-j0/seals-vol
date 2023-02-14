@@ -48,17 +48,19 @@ int main(int argc, char** argv) {
 	}
 
 	// Export some of the slices in the volume
-	/*for (size_t z = 0, depth = vol->getDownscaledDepth(); z < depth; z += 10) {
+	for (size_t z = 0, depth = vol->getDownscaledDepth(); z < depth; ++z) {
 		if (!vol->exportSlicePng(z, "out/" + name + "/" + std::to_string(z) + ".png", threshold, threshold)) {
 			return 1;
 		}
 		printf("%zu / %zu\n", z, depth);
-	}*/
+	}
 
 	// Export entire volume as polygon mesh (simple cubes)
-	if (!vol->exportObj("out/" + name + ".obj", threshold, 0.01f)) {
-		return 1;
-	}
+	// if (!vol->exportObj("out/" + name + ".obj", threshold, 0.01f)) {
+	// 	return 1;
+	// }
+    
+    printf(BLUE "Done.\n" WHITE);
 
 	return 0;
 }

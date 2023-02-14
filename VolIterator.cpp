@@ -55,7 +55,11 @@ bool VolIterator::loadSlice(size_t z) {
 		std::streamoff pos = (std::streamoff)(currentZ + slices.size()) * width * height * sizeof(float); // global offset
 		std::size_t writeOffset = 0; // offset into the slice being written out
 		while (remaining > 0) {
-			std::size_t fileIdx = pos % commonFileSize; // grab the file that contains the beginning of the range of bytes to read
+			std::size_t fileIdx = pos / commonFileSize; // grab the file that contains the beginning of the range of bytes to read
+            if (fileIdx >= files.size()) {
+                printf(RED "Error reading volume file %zu, only %zu files have been identified!...\n" WHITE, fileIdx, files.size());
+                return false;
+            }
 			std::streamoff localPos = pos - fileIdx * commonFileSize; // position of the range start inside the file
 			files[fileIdx].seekg(localPos);
 			if (files[fileIdx].tellg() == -1) {
@@ -134,10 +138,9 @@ float VolIterator::getVoxel(size_t x, size_t y, size_t z) {
 	for (size_t fullZ = z * params.downscaleZ; fullZ < (z + 1) * params.downscaleZ && fullZ < depth; ++fullZ) {
 		
 		if (fullZ < currentZ || fullZ >= currentZ + slices.size()) {
-			printf(RED "Z is out of range when fetching voxels: %zu: full = %zu, current = %zu, slices.length = %zu, depth = %zu...\n" WHITE, z, fullZ, currentZ, slices.size(), depth);
+			printf(RED "Z is out of range when fetching voxels: %zu: full = %zu, current = %zu, slices.length = %zu (loaded num: %zu), depth = %zu...\n" WHITE, z, fullZ, currentZ, slices.size(), params.loadedNum, depth);
 			exit(1);
 		}
-		assert(fullZ >= currentZ && fullZ < currentZ + slices.size());
 
 		for (size_t fullY = y * params.downscaleY; fullY < (y + 1) * params.downscaleY && fullY < height; ++fullY) {
 			for (size_t fullX = x * params.downscaleX; fullX < (x + 1) * params.downscaleX && fullX < width; ++fullX) {
@@ -157,10 +160,13 @@ bool VolIterator::exportSlicePng(size_t z, std::string filename, float minThresh
 		printf(RED "Invalid slice %zu on volume of size %zu x %zu x %zu.\n" WHITE, z, getDownscaledWidth(), getDownscaledHeight(), getDownscaledDepth());
 		return false;
 	}
-
-	if (!loadSlice(z)) {
-		printf(RED "Cannot load slice %zu out of %zu, aborting.\n" WHITE, z, getDownscaledDepth());
-		return false;
+    
+    // load required slice(s)
+	for (size_t fullZ = z * params.downscaleZ; fullZ < (z + 1) * params.downscaleZ && fullZ < depth; ++fullZ) {
+		if (!loadSlice(fullZ)) {
+			printf(RED "Cannot load slice %zu out of %zu, aborting.\n" WHITE, fullZ, depth);
+			return false;
+		}
 	}
 
 	// Convert slice to 8-bit greyscale image
