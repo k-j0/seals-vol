@@ -23,6 +23,17 @@ int main(int argc, char** argv) {
             width = 1920;
             height = 1855;
             depth = 1535;
+        } else if (args.read<bool>("harp-7357", false)) {
+            filename = "../seals-scans/phoca_groenlandica_7357 [2023-03-27 15.00.51]/phoca_groenlandica_7357/phoca_groenlandica_7357.vol";
+            width = 991;
+            height = 1216;
+            depth = 1440;
+        } else if (args.read<bool>("harp-7360", false)) {
+            filename = "../seals-scans/phoca_groenlandica_7360 [2023-04-11 09.46.00]/phoca_groenlandica_7360/phoca_groenlandica_7360.vol";
+            width = height = depth = 1440;
+        } else if (args.read<bool>("harp-7498", false)) {
+            filename = "../seals-scans/phoca_groenlandica_7498 [2023-03-27 13.42.10]/phoca_groenlandica_7498/phoca_groenlandica_7498.vol";
+            width = height = depth = 1440;
         } else {
             filename = args.read<std::string>("file", "../seals-scans/phoca_groenlandica_juvenil [2022-04-05 13.35.00]/phoca_groenlandica_juvenil/phoca_groenlandica_juvenil.vol-parts");
             width = args.read<size_t>("width", 1893);
